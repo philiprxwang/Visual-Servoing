@@ -5,7 +5,7 @@ Create environment and install packages
 ```
 conda create --name panda python==3.10
 conda activate panda
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 
 Test
