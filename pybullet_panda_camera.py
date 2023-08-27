@@ -15,8 +15,6 @@ pandaId = p.loadURDF('franka_panda/panda.urdf', basePosition=[0,0,0.6],baseOrien
 tableId = p.loadURDF('table/table.urdf', basePosition=[0.65/2,0,0], baseOrientation=p.getQuaternionFromEuler([0,0, 0]))
 rand_objId = p.loadURDF('random_urdfs/000/000.urdf', basePosition = [0.5,0, 0.6]) # some random object
 
-p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=50, cameraPitch=-30, cameraTargetPosition=[0.2,0,0.8])
-
 num_joints = p.getNumJoints(pandaId)
 print(f"Number of joints: {num_joints}")
 panda_end_effector_idx = 11 # End effector joint
