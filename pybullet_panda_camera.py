@@ -9,7 +9,6 @@ p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0,0,-9.81)
 
-
 planeId = p.loadURDF('plane.urdf')
 pandaId = p.loadURDF('franka_panda/panda.urdf', basePosition=[0,0,0.6],baseOrientation= p.getQuaternionFromEuler([0,0,0]),useFixedBase=True)
 tableId = p.loadURDF('table/table.urdf', basePosition=[0.65/2,0,0], baseOrientation=p.getQuaternionFromEuler([0,0, 0]))
@@ -21,7 +20,6 @@ panda_end_effector_idx = 11 # End effector joint
 
 for t in range(100000):
 
-     
     target_pos = [0.5, 0, 1.5] 
     target_orn = p.getQuaternionFromEuler([0,-math.pi, math.pi/2]) # downward orientation
     
