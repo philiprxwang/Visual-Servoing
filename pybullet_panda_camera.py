@@ -13,6 +13,9 @@ planeId = p.loadURDF('plane.urdf')
 pandaId = p.loadURDF('franka_panda/panda.urdf', basePosition=[0,0,0.6],baseOrientation= p.getQuaternionFromEuler([0,0,0]),useFixedBase=True)
 tableId = p.loadURDF('table/table.urdf', basePosition=[0.65/2,0,0], baseOrientation=p.getQuaternionFromEuler([0,0, 0]))
 rand_objId = p.loadURDF('random_urdfs/000/000.urdf', basePosition = [0.5,0, 0.6]) # some random object
+cubeId = p.loadURDF('cube_small.urdf', basePosition = [0.2, -0.1, 1.5])
+
+p.changeDynamics(cubeId, -1, 5) # changing the mass of the cube makes it more stationary when applying fixed constraint later on
 
 num_joints = p.getNumJoints(pandaId)
 print(f"Number of joints: {num_joints}")
@@ -27,16 +30,19 @@ for t in range(100000):
     for i in range(7): # 7 DoF
         p.setJointMotorControl2(pandaId, i, controlMode=p.POSITION_CONTROL, targetPosition=joint_poses[i])
 
-    end_effector_state = p.getLinkState(pandaId, 11)
-    end_effector_pos = np.array(end_effector_state[0])
-    end_effector_orn = np.array(end_effector_state[1])
-    rot_matrix = np.array(p.getMatrixFromQuaternion(end_effector_orn)).reshape(3,3) # 3x3 rotation matrix (right, forward, up by columns)
+    cube_orn = p.getQuaternionFromEuler([0,0,0])
+    panda_cid = p.createConstraint(pandaId, 11, cubeId, -1, p.JOINT_FIXED, [0,0,0], [0.035, 0, -0.04], childFramePosition = [0,0,0], childFrameOrientation = cube_orn)
+
+    cube_state = p.getBasePositionAndOrientation(cubeId)
+    cube_pos = np.array(cube_state[0])
+    cube_orn = np.array(cube_state[1])
+    rot_matrix = np.array(p.getMatrixFromQuaternion(cube_orn)).reshape(3,3) # 3x3 rotation matrix (right, forward, up by columns)
     forward_vec = rot_matrix.dot(np.array((0, 0, 1)))
     up_vec = rot_matrix.dot(np.array((0, 1, 0)))
 
-    target_position = end_effector_pos + 0.1 * forward_vec
+    target_position = cube_pos + 0.1 * forward_vec
 
-    view_matrix = p.computeViewMatrix(end_effector_pos, target_position, up_vec)
+    view_matrix = p.computeViewMatrix(cube_pos, target_position, up_vec)
 
     cam_width, cam_height = 960,720
     aspect_ratio = cam_width / cam_height
@@ -57,4 +63,3 @@ for t in range(100000):
     time.sleep(1/240)
 
 p.disconnect()
-
