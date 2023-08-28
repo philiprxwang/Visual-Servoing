@@ -36,7 +36,7 @@ for t in range(100000):
 
     target_position = end_effector_pos + 0.1 * forward_vec
 
-    view_matrix = p.computeViewMatrix(end_effector_pos, end_effector_pos + 0.1 * forward_vec, up_vec)
+    view_matrix = p.computeViewMatrix(end_effector_pos, target_position, up_vec)
 
     cam_width, cam_height = 960,720
     aspect_ratio = cam_width / cam_height
