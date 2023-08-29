@@ -55,7 +55,7 @@ for t in range(100000):
     img = p.getCameraImage(cam_width, cam_height, view_matrix, proj_matrix, renderer = p.ER_BULLET_HARDWARE_OPENGL)
 
     if t > 500:
-        
+
     # rgb_array = np.array(rgbPixels, dtype = np.uint8) # 8 bit integers
     # rgb_array = np.reshape(rgb_array, (cam_height, cam_width, 4))
     # depth_array = np.reshape(depthPixels, [cam_height, cam_width])
@@ -65,3 +65,5 @@ for t in range(100000):
     time.sleep(1/240)
 
 p.disconnect()
+
+print('test')
