@@ -13,7 +13,7 @@ planeId = p.loadURDF('plane.urdf')
 pandaId = p.loadURDF('franka_panda/panda.urdf', basePosition=[0,0,0.6],baseOrientation= p.getQuaternionFromEuler([0,0,0]),useFixedBase=True)
 tableId = p.loadURDF('table/table.urdf', basePosition=[0.65/2,0,0], baseOrientation=p.getQuaternionFromEuler([0,0, 0]))
 rand_objId = p.loadURDF('random_urdfs/000/000.urdf', basePosition = [0.8,0, 0.6]) # some random object
-cubeId = p.loadURDF('cube_small.urdf', basePosition = [0.8, -0.1, 1.5])
+cubeId = p.loadURDF('cube_small.urdf', basePosition = [0.1, -0.1, 1.5], globalScaling = 0.5)
 
 p.changeDynamics(cubeId, -1, 5) # changing the mass of the cube makes it more stationary when applying fixed constraint later on
 
@@ -49,26 +49,26 @@ for t in range(100000):
 
     img = p.getCameraImage(cam_width, cam_height, view_matrix, proj_matrix, renderer = p.ER_BULLET_HARDWARE_OPENGL)
 
-    if t <= 100: # Panda moves to hover above object 
-        target_pos = [0.8, 0, 1.5] 
+    if t <= 50: # Panda initial position
+        target_pos = [0.7, 0, 1.5] 
         gripper = 1 # gripper val is 0 if grasping object, else 1
-    elif t > 100 and t <= 200: # Panda moves down
+    elif t > 50 and t <= 100: # Panda moves down
         target_pos = [0.8, 0, 0.63]
         gripper = 1
-    elif t > 200 and t <= 300: # Panda grasps object
+    elif t > 100 and t <= 110: # Panda grasps object
         target_pos = [0.8, 0, 0.63]
         gripper = 0
-    elif t > 300 and t <= 400: # Panda moves up again
+    elif t > 110 and t <= 150: # Panda moves up
         target_pos = [0.8, -0.3, 1.8]
         gripper = 0
-    elif t > 400: # Panda drops object 
+    elif t > 150: # Panda drops object 
         gripper = 1
         
     joint_poses = p.calculateInverseKinematics(pandaId, panda_end_effector_idx, target_pos, target_orn) 
     for i in range(7): # 7 DoF
         p.setJointMotorControl2(pandaId, i, controlMode=p.POSITION_CONTROL, targetPosition=joint_poses[i])
-    p.setJointMotorControl2(pandaId, 9, controlMode = p.POSITION_CONTROL, targetPosition = gripper * 0.5) # gripper
-    p.setJointMotorControl2(pandaId, 10, controlMode = p.POSITION_CONTROL, targetPosition = gripper * 0.5)
+    p.setJointMotorControl2(pandaId, 9, controlMode = p.POSITION_CONTROL, targetPosition = gripper * 0.2) #J9 and J10 are grippers
+    p.setJointMotorControl2(pandaId, 10, controlMode = p.POSITION_CONTROL, targetPosition = gripper * 0.2)
 
     # rgb_array = np.array(rgbPixels, dtype = np.uint8) # 8 bit integers
     # rgb_array = np.reshape(rgb_array, (cam_height, cam_width, 4))
@@ -76,6 +76,6 @@ for t in range(100000):
 
     p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING) 
     p.stepSimulation()
-   # time.sleep(1/240)
+    time.sleep(1/240)
 
 p.disconnect()
