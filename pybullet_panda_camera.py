@@ -79,5 +79,3 @@ for t in range(100000):
     time.sleep(1/240)
 
 p.disconnect()
-
-print('hello')
