@@ -21,10 +21,9 @@ num_joints = p.getNumJoints(pandaId)
 print(f"Number of joints: {num_joints}")
 panda_end_effector_idx = 11 # End effector joint
 
-for t in range(100000):
+for t in range(1000):
 
     target_orn = p.getQuaternionFromEuler([0,-math.pi, math.pi/2]) # downward orientation
-    
     cube_orn = p.getQuaternionFromEuler([0,0,0])
     panda_cid = p.createConstraint(pandaId, 11, cubeId, -1, p.JOINT_FIXED, [0,0,0], [0.035, 0, -0.04], childFramePosition = [0,0,0], childFrameOrientation = cube_orn)
 
