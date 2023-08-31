@@ -12,14 +12,19 @@ p.setGravity(0,0,-9.81)
 planeId = p.loadURDF('plane.urdf')
 pandaId = p.loadURDF('franka_panda/panda.urdf', basePosition=[0,0,0.6],baseOrientation= p.getQuaternionFromEuler([0,0,0]),useFixedBase=True)
 tableId = p.loadURDF('table/table.urdf', basePosition=[0.65/2,0,0], baseOrientation=p.getQuaternionFromEuler([0,0, 0]))
-rand_objId = p.loadURDF('random_urdfs/000/000.urdf', basePosition = [0.8,0, 0.6]) # some random object
-cubeId = p.loadURDF('cube_small.urdf', basePosition = [0.1, -0.1, 1.5], globalScaling = 0.5)
-
+cubeId = p.loadURDF('cube_small.urdf', basePosition = [0.64, 0, 0.79], globalScaling = 0.5)
 p.changeDynamics(cubeId, -1, 5) # changing the mass of the cube makes it more stationary when applying fixed constraint later on
 
 num_joints = p.getNumJoints(pandaId)
 print(f"Number of joints: {num_joints}")
 panda_end_effector_idx = 11 # End effector joint
+
+neutral_joint_values = [0.00, 0.41, 0.00, -1.85, 0.00, 2.26, 0.79, 0.00, 0.00]
+for i in range(len(neutral_joint_values)):  
+    p.resetJointState(pandaId, i, targetValue = neutral_joint_values[i]) # neutral pos 
+
+rand_objId = p.loadURDF('random_urdfs/000/000.urdf', basePosition = [0.55,0, 0.61]) # some random object
+
 
 for t in range(1000):
 
@@ -48,14 +53,14 @@ for t in range(1000):
 
     img = p.getCameraImage(cam_width, cam_height, view_matrix, proj_matrix, renderer = p.ER_BULLET_HARDWARE_OPENGL)
 
-    if t <= 50: # Panda initial position
-        target_pos = [0.7, 0, 1.5] 
+    if t <= 50: # Panda does nothing
+        target_pos = p.getLinkState(pandaId, 11)[0]
         gripper = 1 # gripper val is 0 if grasping object, else 1
-    elif t > 50 and t <= 100: # Panda moves down
-        target_pos = [0.8, 0, 0.63]
+    if t > 50 and t <= 100: # Panda moves down
+        target_pos = [0.55, 0, 0.63]
         gripper = 1
     elif t > 100 and t <= 110: # Panda grasps object
-        target_pos = [0.8, 0, 0.63]
+        target_pos = [0.55, 0, 0.63]
         gripper = 0
     elif t > 110 and t <= 150: # Panda moves up
         target_pos = [0.8, -0.3, 1.8]
