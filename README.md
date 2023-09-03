@@ -13,3 +13,9 @@ Test
 ```
 python pybullet_panda_camera.py
 ```
+
+To test gym custom environment
+
+```
+python test_script.py
+```
