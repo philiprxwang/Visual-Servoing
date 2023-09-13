@@ -1,9 +1,7 @@
 from gymnasium.envs.registration import register
 
 register(
-    id='gym_examples/PhilEnv-v0',
+    id='gym_examples/PhilEnv-v1',
     entry_point='gym_examples.envs:PhilEnv',
-    max_episode_steps=1000
+    max_episode_steps=100
 )
-
-# After registration, our custom PhilEnv environment can be created with env = gymnasium.make('PhilEnv-v0').
