@@ -19,3 +19,9 @@ To test gym custom environment
 ```
 python test_script.py
 ```
+
+To test A2C SB3 on custom environment
+
+```
+python train_and_test_a2c_sb3.py
+```
