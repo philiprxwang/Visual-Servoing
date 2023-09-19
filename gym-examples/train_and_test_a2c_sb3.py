@@ -11,25 +11,27 @@ from stable_baselines3.common.evaluation import evaluate_policy
 env = gym.make("gym_examples/PhilEnv-v1", render_mode="human")
 
 # Instantiate the agent
-model = A2C("CnnPolicy", env, verbose=1)
+model = A2C("CnnPolicy", env, verbose=1, tensorboard_log = './a2c_tensorboard_log/')
 # Train the agent and display a progress bar
-model.learn(total_timesteps=int(1000), progress_bar=True)
+model.learn(total_timesteps=int(50000), progress_bar=True)
 # Save the agent
 model.save("A2C_test")
-del model  # delete trained model to demonstrate loading
 
-model = A2C.load("A2C_test", env=env)
+# del model  # delete trained model to demonstrate loading
 
-#mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
+# model = A2C.load("A2C_test", env=env)
 
-# Enjoy trained agent
-vec_env = model.get_env()
-obs = vec_env.reset()
-for i in range(1000):
-    action, _states = model.predict(obs, deterministic=True)
-    print(f'Action: {action}')
-    obs, rewards, dones, info = vec_env.step(action) # sb3 does not support terminated and truncated
-    print(f'Observation is {obs} \n'
-          f'Reward is {rewards} \n'
-          f'Done is {dones}') 
-    vec_env.render("human") 
+# #mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
+
+# # Enjoy trained agent
+# vec_env = model.get_env()
+# obs = vec_env.reset()
+# for i in range(1000):
+#     action, _states = model.predict(obs, deterministic=True)
+#     print(f'Action: {action}')
+#     obs, rewards, dones, info = vec_env.step(action) # sb3 does not support terminated and truncated
+#     print(f'Observation is {obs} \n'
+#           f'Reward is {rewards} \n'
+#           f'Done is {dones} \n'
+#           f'Distance is {info}')
+#     vec_env.render("human") 

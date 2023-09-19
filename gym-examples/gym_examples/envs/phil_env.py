@@ -8,10 +8,15 @@ import random
 import gymnasium as gym
 from gymnasium import error, spaces, utils
 from gymnasium.utils import seeding
+import cv2
+import sys
 
-IMG_HEIGHT = 720
-IMG_WIDTH = 960
-NUM_CHANNELS = 3
+np.set_printoptions(threshold=sys.maxsize, linewidth=200) # comment this out later 
+
+IMG_HEIGHT = 160
+IMG_WIDTH = 210
+IMG_MASK_THRESH = 100
+NUM_CHANNELS = 1
 NUM_FRAMES = 1
 DIR_SIZE = 0.1
 
@@ -31,11 +36,12 @@ class PhilEnv(gym.Env):
         self.num_channels = NUM_CHANNELS
         self.num_frames = NUM_FRAMES
         self.dir_size = DIR_SIZE
+        self.img_mask_thresh = IMG_MASK_THRESH
 
-        p.connect(p.GUI)
-        #p.connect(p.DIRECT) 
+        #p.connect(p.GUI)
+        p.connect(p.DIRECT) 
         self.action_space = spaces.Discrete(6) # total 6 actions: front, back, left, right, up, down
-        self.observation_space = spaces.Box(low=0, high = 255, shape = (self.num_channels, self.height, self.width), dtype = np.uint8) # observation is RGB array
+        self.observation_space = spaces.Box(low=0, high = 255, shape = (self.num_channels, 84, 84), dtype = np.uint8) # observation, 160x210 RGB array, undergoes: grayscale, mask and resize to 84x84
         
         """
         action_to_direction dict maps action to movement direction of robot arm.
@@ -69,7 +75,7 @@ class PhilEnv(gym.Env):
         for i in range(len(neutral_joint_values)):  
             p.resetJointState(self.pandaId, i, targetValue = neutral_joint_values[i]) # reset panda to neutral pos 
 
-        self.rand_objId = p.loadURDF('random_urdfs/000/000.urdf', basePosition = [0.55,0, 0.61]) # some random object
+        self.rand_objId = p.loadURDF('random_urdfs/865/865.urdf', basePosition = [0.59,0, 0.61]) # some random object
         
         cube_orn = p.getQuaternionFromEuler([0,0,0])
         panda_cid = p.createConstraint(self.pandaId, 11, self.cubeId, -1, p.JOINT_FIXED, [0,0,0], [0.035, 0, -0.03], childFramePosition = [0,0,0], childFrameOrientation = cube_orn)
@@ -103,17 +109,20 @@ class PhilEnv(gym.Env):
             # terminate because promixity reached
             reward = 100
             terminated = True 
-        elif info['distance'] <= 0.5:
-            # reward that is inversely proportional to distance
-            k = 0.4
-            reward = 1 / (k * info['distance']) 
+        elif 2 <= info['distance'] < 3:
+            reward = -np.exp(5*info['distance'])
+            terminated = False
+        elif info['distance'] < 2:
+            reward = 3*np.exp(1/(3*info['distance']))
             terminated = False
         elif info['distance'] == 3:
-            reward = -1000 # terminate because gripper was too far
+            reward = -10000 # terminate because gripper was too far
             terminated = True  
         else:
             reward = -1 # small negative reward for every step 
             terminated = False
+
+        #print(f'Reward is: {reward}')
 
         if self.render_mode == 'human':
             self.render()
@@ -130,12 +139,30 @@ class PhilEnv(gym.Env):
         return {'distance': cart_dis}
     
     def _get_obs(self):
+        '''
+        Frame is originally 160x210x3 image
+        Grayscale and threshold to downscale and transform input img to 84x84x1
+        CV2 takes in img as (height, width, channels). We will output obs as (channels, height, width)
+        '''
+    #     observation = np.zeros((self.num_channels, self.height, self.width), dtype=np.uint8)
+    # #    for i in range(self.num_frames):
+    # #         observation[:, :, :, i] = np.array(self.render())
+    # #         return {'camera_rgb': observation}
+    #     channel_first_array = self.render().transpose(2, 0, 1) # self.render() gives (height, width, channel)
+    #     observation = np.array(channel_first_array, dtype=np.uint8)
+
+        img_rgb = np.array(self.render(), dtype=np.uint8)
+        img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
+        img_gray = cv2.resize(img_gray, (84, 84), interpolation = cv2.INTER_AREA) # resize to 84x84
+        ret1, img_gray = cv2.threshold(img_gray, self.img_mask_thresh, 255, cv2.THRESH_BINARY) # if higher than img_mask_thresh, set to 255
+        # print('Current array: \n')
+        # print(img_gray)
+        img_gray = img_gray[:, :, None]
+
         observation = np.zeros((self.num_channels, self.height, self.width), dtype=np.uint8)
-    #    for i in range(self.num_frames):
-    #         observation[:, :, :, i] = np.array(self.render())
-    #         return {'camera_rgb': observation}
-        channel_first_array = self.render().transpose(2, 0, 1)
+        channel_first_array = img_gray.transpose(2, 0, 1)
         observation = np.array(channel_first_array, dtype=np.uint8)
+
         return observation
 
     def render(self, mode = 'human'):
