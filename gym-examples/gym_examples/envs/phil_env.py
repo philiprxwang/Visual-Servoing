@@ -18,7 +18,7 @@ IMG_WIDTH = 210
 IMG_MASK_THRESH = 100
 NUM_CHANNELS = 1
 NUM_FRAMES = 1
-DIR_SIZE = 0.1
+DIR_SIZE = 0.2
 
 class PhilEnv(gym.Env):
     """
@@ -41,8 +41,8 @@ class PhilEnv(gym.Env):
         #p.connect(p.GUI)
         p.connect(p.DIRECT) 
         self.action_space = spaces.Discrete(6) # total 6 actions: front, back, left, right, up, down
-        self.observation_space = spaces.Box(low=0, high = 255, shape = (self.num_channels, 84, 84), dtype = np.uint8) # observation, 160x210 RGB array, undergoes: grayscale, mask and resize to 84x84
-        
+        self.observation_space = spaces.Box(low=0, high = 255, shape = (self.num_channels, 84, 84), dtype = np.uint8) # observation, 160x210 RGB array, undergoes: grayscale, mask and resize to 84x84. Activate this line for SB3
+        #self.observation_space = spaces.Box(low=0, high = 255, shape = (84, 84, 1), dtype = np.uint8)
         """
         action_to_direction dict maps action to movement direction of robot arm.
         0,1,2,3,4,5 corresponds to front, back, left, right, up, down respectively
@@ -61,6 +61,7 @@ class PhilEnv(gym.Env):
         self.render_mode = render_mode
 
     def reset(self, seed = None, options = None):
+        super().reset(seed = seed)
         p.resetSimulation()
         p.setGravity(0,0,-9.81)
         p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING)
@@ -105,24 +106,28 @@ class PhilEnv(gym.Env):
         observation = self._get_obs() # returns rgb array
         info = self._get_info() 
         
-        if info['distance'] <= 0.05:
+        if info['distance'] <= 0.08:
             # terminate because promixity reached
-            reward = 100
+            reward = 10000
             terminated = True 
-        elif 2 <= info['distance'] < 3:
-            reward = -np.exp(5*info['distance'])
-            terminated = False
-        elif info['distance'] < 2:
+        elif 0.08 < info['distance'] < 0.2:
             reward = 3*np.exp(1/(3*info['distance']))
             terminated = False
-        elif info['distance'] == 3:
+        elif 0.2 <= info['distance'] < 0.4:
+            reward = -np.exp(15*info['distance'])
+            terminated = False
+        elif info['distance'] >= 0.4:
             reward = -10000 # terminate because gripper was too far
             terminated = True  
-        else:
-            reward = -1 # small negative reward for every step 
-            terminated = False
+        # else:
+        #     reward = -1 # small negative reward for every step 
+        #     terminated = False
 
-        #print(f'Reward is: {reward}')
+        print(f'Reward is: {reward}')
+        print(f"Distance is: {info['distance']}")
+
+        if terminated:
+            print(' \n Terminated! Finally.')
 
         if self.render_mode == 'human':
             self.render()
@@ -142,7 +147,7 @@ class PhilEnv(gym.Env):
         '''
         Frame is originally 160x210x3 image
         Grayscale and threshold to downscale and transform input img to 84x84x1
-        CV2 takes in img as (height, width, channels). We will output obs as (channels, height, width)
+        CV2 takes in img as (height, width, channels).
         '''
     #     observation = np.zeros((self.num_channels, self.height, self.width), dtype=np.uint8)
     # #    for i in range(self.num_frames):
@@ -157,13 +162,15 @@ class PhilEnv(gym.Env):
         ret1, img_gray = cv2.threshold(img_gray, self.img_mask_thresh, 255, cv2.THRESH_BINARY) # if higher than img_mask_thresh, set to 255
         # print('Current array: \n')
         # print(img_gray)
-        img_gray = img_gray[:, :, None]
 
-        observation = np.zeros((self.num_channels, self.height, self.width), dtype=np.uint8)
-        channel_first_array = img_gray.transpose(2, 0, 1)
-        observation = np.array(channel_first_array, dtype=np.uint8)
+        #img_gray = img_gray[:, :, None] # Returns obs of shape [84, 84, 1]
+        img_gray = img_gray[None, :, :] # Returns obs of shape [1,84,84] - activate this line for sb3
 
-        return observation
+        # observation = np.zeros((self.num_channels, self.height, self.width), dtype=np.uint8)
+        # channel_first_array = img_gray.transpose(2, 0, 1)
+        # observation = np.array(channel_first_array, dtype=np.uint8)
+
+        return img_gray
 
     def render(self, mode = 'human'):
         cube_orn = p.getQuaternionFromEuler([0,0,0])
