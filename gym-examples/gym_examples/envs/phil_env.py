@@ -38,9 +38,11 @@ class PhilEnv(gym.Env):
         self.dir_size = DIR_SIZE
         self.img_mask_thresh = IMG_MASK_THRESH
 
-        p.connect(p.GUI)
-        #p.connect(p.DIRECT) 
+        #p.connect(p.GUI)
+        p.connect(p.DIRECT) 
         self.action_space = spaces.Discrete(6) # total 6 actions: front, back, left, right, up, down
+        self.observation_space = spaces.Box(low=0, high = 255, shape = (self.num_channels, 84, 84), dtype = np.uint8) # observation, 160x210 RGB array, undergoes: grayscale, mask and resize to 84x84. Activate this line for SB3
+        #self.observation_space = spaces.Box(low=0, high = 255, shape = (84, 84, 1), dtype = np.uint8)
         self.observation_space = spaces.Box(low=0, high = 255, shape = (self.num_channels, 84, 84), dtype = np.uint8) # observation, 160x210 RGB array, undergoes: grayscale, mask and resize to 84x84. Activate this line for SB3
         #self.observation_space = spaces.Box(low=0, high = 255, shape = (84, 84, 1), dtype = np.uint8)
         """
@@ -160,12 +162,19 @@ class PhilEnv(gym.Env):
         info = self._get_info() 
         
         if info['distance'] <= 0.08:
+        if info['distance'] <= 0.08:
             # terminate because promixity reached
+            reward = 10000
             reward = 10000
             terminated = True 
         elif 0.08 < info['distance'] < 0.2:
+        elif 0.08 < info['distance'] < 0.2:
             reward = 3*np.exp(1/(3*info['distance']))
             terminated = False
+        elif 0.2 <= info['distance'] < 0.4:
+            reward = -np.exp(15*info['distance'])
+            terminated = False
+        elif info['distance'] >= 0.4:
         elif 0.2 <= info['distance'] < 0.4:
             reward = -np.exp(15*info['distance'])
             terminated = False
@@ -175,7 +184,15 @@ class PhilEnv(gym.Env):
         # else:
         #     reward = -1 # small negative reward for every step 
         #     terminated = False
+        # else:
+        #     reward = -1 # small negative reward for every step 
+        #     terminated = False
 
+        print(f'Reward is: {reward}')
+        print(f"Distance is: {info['distance']}")
+
+        if terminated:
+            print(' \n Terminated! Finally.')
         print(f'Reward is: {reward}')
         print(f"Distance is: {info['distance']}")
 
@@ -201,6 +218,7 @@ class PhilEnv(gym.Env):
         Frame is originally 160x210x3 image
         Grayscale and threshold to downscale and transform input img to 84x84x1
         CV2 takes in img as (height, width, channels).
+        CV2 takes in img as (height, width, channels).
         '''
     #     observation = np.zeros((self.num_channels, self.height, self.width), dtype=np.uint8)
     # #    for i in range(self.num_frames):
@@ -219,10 +237,17 @@ class PhilEnv(gym.Env):
         #img_gray = img_gray[:, :, None] # Returns obs of shape [84, 84, 1]
         img_gray = img_gray[None, :, :] # Returns obs of shape [1,84,84] - activate this line for sb3
 
+        #img_gray = img_gray[:, :, None] # Returns obs of shape [84, 84, 1]
+        img_gray = img_gray[None, :, :] # Returns obs of shape [1,84,84] - activate this line for sb3
+
+        # observation = np.zeros((self.num_channels, self.height, self.width), dtype=np.uint8)
+        # channel_first_array = img_gray.transpose(2, 0, 1)
+        # observation = np.array(channel_first_array, dtype=np.uint8)
         # observation = np.zeros((self.num_channels, self.height, self.width), dtype=np.uint8)
         # channel_first_array = img_gray.transpose(2, 0, 1)
         # observation = np.array(channel_first_array, dtype=np.uint8)
 
+        return img_gray
         return img_gray
 
     def render(self, mode = 'human'):
