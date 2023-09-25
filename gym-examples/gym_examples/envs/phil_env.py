@@ -171,9 +171,6 @@ class PhilEnv(gym.Env):
         elif 0.2 <= info['distance'] < 0.4:
             reward = -np.exp(15*info['distance'])
             terminated = False
-        elif 0.2 <= info['distance'] < 0.4:
-            reward = -np.exp(15*info['distance'])
-            terminated = False
         elif info['distance'] >= 0.4:
             reward = -10000 # terminate because gripper was too far
             terminated = True  
