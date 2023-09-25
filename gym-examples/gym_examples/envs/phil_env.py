@@ -162,19 +162,16 @@ class PhilEnv(gym.Env):
         info = self._get_info() 
         
         if info['distance'] <= 0.08:
-        if info['distance'] <= 0.08:
             # terminate because promixity reached
             reward = 10000
             reward = 10000
             terminated = True 
-        elif 0.08 < info['distance'] < 0.2:
         elif 0.08 < info['distance'] < 0.2:
             reward = 3*np.exp(1/(3*info['distance']))
             terminated = False
         elif 0.2 <= info['distance'] < 0.4:
             reward = -np.exp(15*info['distance'])
             terminated = False
-        elif info['distance'] >= 0.4:
         elif 0.2 <= info['distance'] < 0.4:
             reward = -np.exp(15*info['distance'])
             terminated = False
