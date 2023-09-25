@@ -189,9 +189,6 @@ class PhilEnv(gym.Env):
         print(f'Reward is: {reward}')
         print(f"Distance is: {info['distance']}")
 
-        if terminated:
-            print(' \n Terminated! Finally.')
-
         if self.render_mode == 'human':
             self.render()
 
