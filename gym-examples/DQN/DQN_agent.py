@@ -11,7 +11,7 @@ import sys
 import torch
 import torch.nn as nn
 from DQN.DQN_model import DQN
-
+from DQN.DQN_replay_buffer import ReplayBuffer
 
 class DQNAgent:
     def __init__(self,
@@ -21,8 +21,7 @@ class DQNAgent:
                  lr,
                  batch_size,
                  gamma,
-                 device = torch.device('mps')):
-        # MPS NEEDS TO BE EVENTUALLY CHANGED!
+                 device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')):
         
         self.memory = replay_buffer
         self.batch_size = batch_size
@@ -38,22 +37,52 @@ class DQNAgent:
 
         device = self.device
 
-        states, actions, rewards, next_states, terminated, truncated = self.memory.sample()
-        states = torch.from_numpy(states).uint8().to(device)
-        actions = torch.from_numpy(actions).uint8().to(device)
-        rewards = torch.from_numpy(actions).float64().to(device)
-        next_states = torch.from_numpy(next_states).float64().to(device)
-        terminated = torch.from_numpy(terminated).float64().to(device)
-        truncated = torch.from_numpy(truncated).float64().to(device)
+        states, actions, rewards, next_states, dones = self.memory.sample(self.batch_size)
+        print(f'Type of rewards: {type(rewards)}')
+        
+        
+        states = np.array(states) / 255.0
+        next_states = np.array(next_states) / 255.0
+        states = torch.from_numpy(states).float().to(device)
+        actions = torch.from_numpy(actions).long().to(device)
+        rewards = torch.from_numpy(rewards).float().to(device)
+        next_states = torch.from_numpy(next_states).float().to(device)
+        dones = torch.from_numpy(dones).byte().to(device)
+        print(f'Dones are {dones}')
         
         with torch.no_grad(): # code below not tracked for gradient computation 
             next_q_vals = self.target_network(next_states)
             next_q_vals_max = next_q_vals.max(1)
-            target_q_vals = rewards + (1-terminated) * self.gamma * next_q_vals_max # TD target - how to add truncated?
+            target_q_vals = rewards + (1-terminated) * self.gamma * next_q_vals_max # GYMNASIUM DOCUMENTATI|ON SAYS SHOULD BE TERMINATED: FIX THIS LINE!
 
         input_q_values = self.policy_network(states)
         intput_q_values = input_q_values.gather(1, actions.unsqueeze(1)).squeeze()
 
+        loss = nn.SmoothL1Loss(input_q_values, target_q_vals)
 
+        self.optimiser.zero_grad()
+        loss.backward()
+        self.optimiser.step()
 
+        del states
+        del next_states
 
+        return loss.item()
+    
+    def update_target_network(self):
+
+        self.target_network.load_state_dict(self.policy_network.state_dict())
+    
+    def act(self, state):
+
+        device = self.device
+
+        state = np.array(state) / 255.0 # normalize and then convert to float before passing to DQN
+      #  print(f'State shape bef squeezing: {state.shape}')
+        state = torch.from_numpy(state).float().unsqueeze(0).to(device) # (4, 84, 84) --> (1, 4, 84, 84)
+       # print(f'State shape after squeezing: {state.shape}')
+
+        with torch.no_grad():
+            q_values = self.policy_network(state)
+            _, action = q_values.max(1)
+            return action.item() # return as standard number 

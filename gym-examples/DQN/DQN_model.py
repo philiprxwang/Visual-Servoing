@@ -15,9 +15,9 @@ class DQN(nn.Module):
     def __init__(self,
                  observation_space: spaces.Box,
                  action_space: spaces.Discrete):
-        super(DQN, self).__init__():
+        super(DQN, self).__init__()
 
-        self.conv1 = nn.Conv2d(in_channels = 1, out_channels = 32, kernel_size = 8, stride = 4)
+        self.conv1 = nn.Conv2d(in_channels = observation_space.shape[0], out_channels = 32, kernel_size = 8, stride = 4)
         self.relu1 = nn.ReLU()
 
         self.conv2 = nn.Conv2d(in_channels = 32, out_channels = 64, kernel_size = 4, stride = 2)
@@ -26,7 +26,9 @@ class DQN(nn.Module):
         self.conv3 = nn.Conv2d(in_channels = 64, out_channels = 64, kernel_size = 3, stride = 1)
         self.relu3 = nn.ReLU()
 
-        self.fc1 = nn.Linear()
+        self.fc1 = nn.Linear(7*7*64, out_features = 512)
+        self.relu4 = nn.ReLU()
+        self.fc2 = nn.Linear(512, action_space.n)
 
         # Note: Height out = (Hin - kernel_size + 2*padding)/ stride + 1
     #Height and width out = Hin/kernel_size
