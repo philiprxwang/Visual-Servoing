@@ -164,7 +164,6 @@ class PhilEnv(gym.Env):
         if info['distance'] <= 0.08:
             # terminate because promixity reached
             reward = 10000
-            reward = 10000
             terminated = True 
         elif 0.08 < info['distance'] < 0.2:
             reward = 3*np.exp(1/(3*info['distance']))
