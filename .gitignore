@@ -2,9 +2,12 @@
 
 .DS_Store
 envs/__pycache__/
-A2C_PhilEnv.zip
-A2C_test.zip
+DQN_PhilEnv.zip
+DQN_test.zip
 settings.json
+events.out.tfevents.*
+*.zip
+*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
