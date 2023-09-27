@@ -55,6 +55,5 @@ class FrameStack(gym.Wrapper):
         assert len(self.frames) == self.num_stack
         return LazyFrames(list(self.frames))
     
-    # Max and Skip Env needs to be inside!!!!!!!!!!!!!!!!!!!!!
     
  
