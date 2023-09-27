@@ -38,11 +38,9 @@ class PhilEnv(gym.Env):
         self.dir_size = DIR_SIZE
         self.img_mask_thresh = IMG_MASK_THRESH
 
-        #p.connect(p.GUI)
-        p.connect(p.DIRECT) 
+        p.connect(p.GUI)
+        #p.connect(p.DIRECT) 
         self.action_space = spaces.Discrete(6) # total 6 actions: front, back, left, right, up, down
-        self.observation_space = spaces.Box(low=0, high = 255, shape = (self.num_channels, 84, 84), dtype = np.uint8) # observation, 160x210 RGB array, undergoes: grayscale, mask and resize to 84x84. Activate this line for SB3
-        #self.observation_space = spaces.Box(low=0, high = 255, shape = (84, 84, 1), dtype = np.uint8)
         self.observation_space = spaces.Box(low=0, high = 255, shape = (self.num_channels, 84, 84), dtype = np.uint8) # observation, 160x210 RGB array, undergoes: grayscale, mask and resize to 84x84. Activate this line for SB3
         #self.observation_space = spaces.Box(low=0, high = 255, shape = (84, 84, 1), dtype = np.uint8)
         """
@@ -71,6 +69,7 @@ class PhilEnv(gym.Env):
     def reset(self, seed = None, options = None):
         super().reset(seed = seed)
         if not self.loaded:
+            print('after IF statement')
             self.loaded = True
             p.resetSimulation()
             p.setGravity(0,0,-9.81)
@@ -96,7 +95,8 @@ class PhilEnv(gym.Env):
             self.cube_orn = p.getQuaternionFromEuler([0,0,0])
             panda_cid = p.createConstraint(self.pandaId, 11, self.cubeId, -1, p.JOINT_FIXED, [0,0,0], [0.035, 0, -0.03], childFramePosition = [0,0,0], childFrameOrientation = self.cube_orn)
 
-        else: # just reset base joint state/positions
+        else: # just reset base joint state/positions]
+            print('after else statement')
             neutral_joint_values = [0.00, 0.41, 0.00, -1.85, 0.00, 2.26, 0.79, 0.00, 0.00]
             for i in range(len(neutral_joint_values)):  
                 p.resetJointState(self.pandaId, i, targetValue = neutral_joint_values[i]) # reset panda to neutral pos 
@@ -106,7 +106,7 @@ class PhilEnv(gym.Env):
             p.resetBasePositionAndOrientation(self.cubeId, posObj = [0.64, 0, 0.79], ornObj = p.getQuaternionFromEuler([0,0, 0]))
             panda_cid = p.createConstraint(self.pandaId, 11, self.cubeId, -1, p.JOINT_FIXED, [0,0,0], [0.035, 0, -0.03], childFramePosition = [0,0,0], childFrameOrientation = self.cube_orn)
 
-
+        time.sleep(0.5)
         observation = self._get_obs() # returns rgb array
         info = self._get_info() # returns cartesian dis
 
@@ -186,8 +186,6 @@ class PhilEnv(gym.Env):
 
         if terminated:
             print(' \n Terminated! Finally.')
-        print(f'Reward is: {reward}')
-        print(f"Distance is: {info['distance']}")
 
         if self.render_mode == 'human':
             self.render()
@@ -227,9 +225,6 @@ class PhilEnv(gym.Env):
         #img_gray = img_gray[:, :, None] # Returns obs of shape [84, 84, 1]
         img_gray = img_gray[None, :, :] # Returns obs of shape [1,84,84] - activate this line for sb3
 
-        #img_gray = img_gray[:, :, None] # Returns obs of shape [84, 84, 1]
-        img_gray = img_gray[None, :, :] # Returns obs of shape [1,84,84] - activate this line for sb3
-
         # observation = np.zeros((self.num_channels, self.height, self.width), dtype=np.uint8)
         # channel_first_array = img_gray.transpose(2, 0, 1)
         # observation = np.array(channel_first_array, dtype=np.uint8)
@@ -237,13 +232,10 @@ class PhilEnv(gym.Env):
         # channel_first_array = img_gray.transpose(2, 0, 1)
         # observation = np.array(channel_first_array, dtype=np.uint8)
 
-        return img_gray
         return img_gray
 
     def render(self, mode = 'human'):
         cube_orn = p.getQuaternionFromEuler([0,0,0])
-
-        # panda_cid used to be here 
 
         cube_state = p.getBasePositionAndOrientation(self.cubeId)
         cube_pos = np.array(cube_state[0])
