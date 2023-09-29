@@ -23,5 +23,8 @@ python test_script.py
 To test DQN SB3 on custom environment
 
 ```
-python train_and_test_dqn_sb3.py
+python train_and_test_dqn_sb3.py --stacking True
+```
+```
+python train_and_test_dqn_sb3.py --stacking False
 ```
