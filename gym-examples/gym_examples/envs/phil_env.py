@@ -38,8 +38,8 @@ class PhilEnv(gym.Env):
         self.dir_size = DIR_SIZE
         self.img_mask_thresh = IMG_MASK_THRESH
 
-        p.connect(p.GUI)
-        #p.connect(p.DIRECT) 
+        #p.connect(p.GUI)
+        p.connect(p.DIRECT) 
         self.action_space = spaces.Discrete(6) # total 6 actions: front, back, left, right, up, down
         self.observation_space = spaces.Box(low=0, high = 255, shape = (self.num_channels, 84, 84), dtype = np.uint8) # observation, 160x210 RGB array, undergoes: grayscale, mask and resize to 84x84. Activate this line for SB3
         #self.observation_space = spaces.Box(low=0, high = 255, shape = (84, 84, 1), dtype = np.uint8)
@@ -105,8 +105,8 @@ class PhilEnv(gym.Env):
                 p.resetJointState(self.pandaId, finger_joint_indices_values[i][0], targetValue = finger_joint_indices_values[i][1]) # reset panda fingers
             p.resetBasePositionAndOrientation(self.cubeId, posObj = [0.64, 0, 0.79], ornObj = p.getQuaternionFromEuler([0,0, 0]))
             panda_cid = p.createConstraint(self.pandaId, 11, self.cubeId, -1, p.JOINT_FIXED, [0,0,0], [0.035, 0, -0.03], childFramePosition = [0,0,0], childFrameOrientation = self.cube_orn)
+            p.resetBasePositionAndOrientation(self.boxId, posObj = [0.59,0, 0.61], ornObj = p.getQuaternionFromEuler([0,0, 0]))
 
-        time.sleep(0.5)
         observation = self._get_obs() # returns rgb array
         info = self._get_info() # returns cartesian dis
 
