@@ -20,11 +20,16 @@ To test gym custom environment
 python test_script.py
 ```
 
-To test DQN SB3 on custom environment
+To test DQN from SB3 on custom environment
 
 ```
 python train_and_test_dqn_sb3.py --stacking True
 ```
 ```
 python train_and_test_dqn_sb3.py --stacking False
+```
+
+To test DQN implementation 
+```
+python train_dqn.py
 ```
