@@ -25,6 +25,7 @@ def main():
         env = VecFrameStack(env, 4)
 
         # Instantiate the agent
+        # ADD TARGET_UPDATE_INTERVAL? Default is 10000
         model = DQN("CnnPolicy", 
                     env, 
                     buffer_size = 20000, # buffer size is smaller in stacking==True because 4 frames take up more memory
