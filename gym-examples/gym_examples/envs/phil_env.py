@@ -69,7 +69,6 @@ class PhilEnv(gym.Env):
     def reset(self, seed = None, options = None):
         super().reset(seed = seed)
         if not self.loaded:
-            print('after IF statement')
             self.loaded = True
             p.resetSimulation()
             p.setGravity(0,0,-9.81)
@@ -96,7 +95,6 @@ class PhilEnv(gym.Env):
             panda_cid = p.createConstraint(self.pandaId, 11, self.cubeId, -1, p.JOINT_FIXED, [0,0,0], [0.035, 0, -0.03], childFramePosition = [0,0,0], childFrameOrientation = self.cube_orn)
 
         else: # just reset base joint state/positions]
-            print('after else statement')
             neutral_joint_values = [0.00, 0.41, 0.00, -1.85, 0.00, 2.26, 0.79, 0.00, 0.00]
             for i in range(len(neutral_joint_values)):  
                 p.resetJointState(self.pandaId, i, targetValue = neutral_joint_values[i]) # reset panda to neutral pos 
