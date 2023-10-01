@@ -8,6 +8,7 @@ settings.json
 events.out.tfevents.*
 *.zip
 *.csv
+*.pth
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

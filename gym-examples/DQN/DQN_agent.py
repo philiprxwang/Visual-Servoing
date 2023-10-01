@@ -38,8 +38,6 @@ class DQNAgent:
         device = self.device
 
         states, actions, rewards, next_states, dones = self.memory.sample(self.batch_size)
-        print(f'Type of rewards: {type(rewards)}')
-        
         
         states = np.array(states) / 255.0
         next_states = np.array(next_states) / 255.0
@@ -47,18 +45,25 @@ class DQNAgent:
         actions = torch.from_numpy(actions).long().to(device)
         rewards = torch.from_numpy(rewards).float().to(device)
         next_states = torch.from_numpy(next_states).float().to(device)
-        dones = torch.from_numpy(dones).byte().to(device)
-        print(f'Dones are {dones}')
+        dones = torch.from_numpy(dones).short().to(device)
         
         with torch.no_grad(): # code below not tracked for gradient computation 
             next_q_vals = self.target_network(next_states)
-            next_q_vals_max = next_q_vals.max(1)
-            target_q_vals = rewards + (1-terminated) * self.gamma * next_q_vals_max # GYMNASIUM DOCUMENTATI|ON SAYS SHOULD BE TERMINATED: FIX THIS LINE!
+            next_q_vals_max, _ = next_q_vals.max(1) # Select max value in each state/row
+            # print(f'1-dones is {1-dones}')
+            # print(f'Self.gamma is {self.gamma}')
+            # print(f'Next_q_values max is {next_q_vals_max}')
+            # print(f'Rewards is {rewards}')
+            # x = (1 -dones) * self.gamma * next_q_vals_max
+            # print(f'x is {x}')
+
+            target_q_vals = rewards + (1-dones) * self.gamma * next_q_vals_max 
 
         input_q_values = self.policy_network(states)
-        intput_q_values = input_q_values.gather(1, actions.unsqueeze(1)).squeeze()
+        input_q_values = input_q_values.gather(1, actions.unsqueeze(1)).squeeze()
 
-        loss = nn.SmoothL1Loss(input_q_values, target_q_vals)
+        criterion = nn.SmoothL1Loss()
+        loss = criterion(input_q_values, target_q_vals)
 
         self.optimiser.zero_grad()
         loss.backward()

@@ -8,11 +8,14 @@ import cv2
 import sys
 import torch
 import torch.nn as nn
+from torch.utils.tensorboard import SummaryWriter
 from DQN.DQN_model import DQN
 from DQN.DQN_replay_buffer import ReplayBuffer
 from DQN.DQN_agent import DQNAgent
 from DQN.wrappers import *
 import argparse
+from tqdm import tqdm
+import contextlib
 
 if __name__ == '__main__':
 
@@ -29,17 +32,17 @@ if __name__ == '__main__':
     hyper_params = {
         'seed': 42,
         'env': 'gym_examples/PhilEnv-v1',
-        'replay_buffer_size': 1000,
-        'learning_rate': 0.001,
+        'replay_buffer_size': 20000,
+        'learning_rate': 0.0001,
         'gamma': 0.99,
-        'total_steps': 50000,
-        'batch_size': 15,
+        'total_steps': 60000,
+        'batch_size': 32,
         'steps_before_learning': 1000,
         'target_network_update_freq': 500,
         'eps_start': epsilon_start,
         'eps_end': 0.01,
-        'eps_fraction': 0.2,
-        'print_freq': 100
+        'eps_fraction': 0.5,
+        'print_freq': 10
     }
 
     np.random.seed(hyper_params['seed'])
@@ -70,52 +73,80 @@ if __name__ == '__main__':
 
    # state= env.reset(seed = hyper_params['seed'])
     state = env.reset()
-    print(f'Length of state: {len(state)}')
-    for i in range(hyper_params['total_steps']):
-        fraction = min(1.0, float(i) / epsilon_annealing_timesteps) # current timestep as a fraction of total annealing timesteps
-        eps_thresh = hyper_params['eps_start'] + fraction * (hyper_params['eps_end'] - hyper_params['eps_start']) # when fraction==1, eps_thresh = eps_end
+   # print(f'Length of state: {len(state)}')
 
-        sample = random.random()
+    
+    class DummyFile(object):
+        '''
+        DummyFile class used to change printing to sys.stdout to ensure tdqm progress bar stays at bottom
+        https://stackoverflow.com/questions/36986929/redirect-print-command-in-python-script-through-tqdm-write/37243211#37243211
+        '''
+        file = None
+        def __init__(self, file):
+            self.file = file
 
-        if sample > eps_thresh:
-            action = agent.act(state) # Act greedily
-        else:
-            action = env.action_space.sample() # Exploration
+        def write(self, x):
+            # Avoid print() second call (useless \n)
+            if len(x.rstrip()) > 0:
+                tqdm.write(x, file=self.file)
 
-        next_state, reward, terminated, truncated, info = env.step(action)
-        
-        if terminated or truncated:
-            done = True
-        else: 
-            done = False
+    @contextlib.contextmanager
+    def nostdout():
+        save_stdout = sys.stdout
+        sys.stdout = DummyFile(sys.stdout)
+        yield
+        sys.stdout = save_stdout
 
-        agent.memory.add(state, action, reward, done, next_state) # add into Replay Buffer
-        state = next_state
+    for i in tqdm(range(hyper_params['total_steps']), file = sys.stdout):
+        with nostdout():
+            fraction = min(1.0, float(i) / epsilon_annealing_timesteps) # current timestep as a fraction of total annealing timesteps
+            eps_thresh = hyper_params['eps_start'] + fraction * (hyper_params['eps_end'] - hyper_params['eps_start']) # when fraction==1, eps_thresh = eps_end
 
-        episode_rewards[-1] += reward
+            sample = random.random()
 
-        if done:
-            state = env.reset()
-            episode_rewards.append(0.0) # new item for new episode 
+            if sample > eps_thresh:
+                action = agent.act(state) # Act greedily
+            else:
+                action = env.action_space.sample() # Exploration
 
-        if i > hyper_params['steps_before_learning']:
-            agent.optimise_td_loss()
-        
-        if i > hyper_params['steps_before_learning'] and i % hyper_params['target_network_update_freq'] == 0: # update target network
-            agent.update_target_network()
-
-        num_episodes = len(episode_rewards)
-
-        if done and num_episodes % hyper_params['print_freq'] == 0: # every 100 episodes
-            mean_reward = round(np.mean(episode_rewards[-101:-1]), 1)
-            print('***************************************')
-            print(f'Timesteps: {i}')
-            print(f'Number of episodes: {num_episodes}')
-            print(f'% time exploring: {eps_thresh*100}')
-            print(f'Mean reward: {mean_reward}')
+            next_state, reward, terminated, truncated, info = env.step(action)
             
-            torch.save(agent.policy_network.state_dict(), f'checkpoint.pth')
-            np.savetxt('rewards_per_episode.csv', episode_rewards, delimiter = ',', fmt='%1.3f')
+            if terminated or truncated:
+                done = 1
+            else: 
+                done = 0
+
+            agent.memory.add(state, action, reward, done, next_state) # add into Replay Buffer
+            # not sure that if done, next_state should be None - https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+            state = next_state
+
+            episode_rewards[-1] += reward
+
+            if done:
+                state = env.reset()
+                episode_rewards.append(0.0) # new item for new episode 
+
+            if i > hyper_params['steps_before_learning']:
+                agent.optimise_td_loss()
+            
+            if i > hyper_params['steps_before_learning'] and i % hyper_params['target_network_update_freq'] == 0: # update target network
+                agent.update_target_network()
+
+            num_episodes = len(episode_rewards)
+            
+            if done:
+                print(f'Number of eps: {num_episodes}')
+
+            if done and num_episodes % hyper_params['print_freq'] == 0:
+                mean_reward = round(np.mean(episode_rewards[-11:-1]), 1)
+                print('***************************************')
+                print(f'Timesteps: {i}')
+                print(f'Number of episodes: {num_episodes}')
+                print(f'% time exploring: {eps_thresh*100}')
+                print(f'Mean reward: {mean_reward}')
+                
+                torch.save(agent.policy_network.state_dict(), f'checkpoint.pth')
+                np.savetxt('rewards_per_episode.csv', episode_rewards, delimiter = ',', fmt='%1.3f')
 
 
 

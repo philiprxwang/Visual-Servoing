@@ -13,7 +13,7 @@ class ReplayBuffer:
     
     def add(self, state, action, reward, done, next_state):
         
-        data = (state, action, reward, next_state, float(done))
+        data = (state, action, reward, next_state, int(done))
 
         if self._next_idx >= len(self._storage): # should it be <=??
             self._storage.append(data)
@@ -28,7 +28,6 @@ class ReplayBuffer:
             state, action, reward, next_state, done = data
             states.append(np.array(state, copy = False))
             actions.append(action)
-            print(f'Type of reward in encoding: {type(reward)}')
             rewards.append(reward)
             next_states.append(np.array(next_state, copy = False))
             dones.append(done)
