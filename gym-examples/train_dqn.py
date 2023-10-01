@@ -48,6 +48,8 @@ if __name__ == '__main__':
     np.random.seed(hyper_params['seed'])
     random.seed(hyper_params['seed'])
 
+    writer = SummaryWriter("DQN_PhilEnv")
+
     env = gym.make('gym_examples/PhilEnv-v1')
  #   env.seed(hyper_params['seed'])
     env = FrameStack(env, 4)
@@ -126,8 +128,11 @@ if __name__ == '__main__':
                 state = env.reset()
                 episode_rewards.append(0.0) # new item for new episode 
 
+            if i < hyper_params['steps_before_learning']:
+                loss = 0 # set loss to 0 first because loss undefined when i < hyper_params['steps_before_learning']
+
             if i > hyper_params['steps_before_learning']:
-                agent.optimise_td_loss()
+                loss = agent.optimise_td_loss()
             
             if i > hyper_params['steps_before_learning'] and i % hyper_params['target_network_update_freq'] == 0: # update target network
                 agent.update_target_network()
@@ -137,7 +142,13 @@ if __name__ == '__main__':
             if done:
                 print(f'Number of eps: {num_episodes}')
 
-            if done and num_episodes % hyper_params['print_freq'] == 0:
+            if i % hyper_params['print_freq'] == 0:
+                writer.add_scalar('Mean reward', round(np.mean(episode_rewards[-11:-1]), 1), i)
+                writer.add_scalar('Loss', loss, i)
+                writer.add_scalar('Epsilon', eps_thresh*100, i)
+                writer.close() 
+
+            if done and num_episodes % hyper_params['print_freq'] == 0: 
                 mean_reward = round(np.mean(episode_rewards[-11:-1]), 1)
                 print('***************************************')
                 print(f'Timesteps: {i}')
@@ -147,7 +158,7 @@ if __name__ == '__main__':
                 
                 torch.save(agent.policy_network.state_dict(), f'checkpoint.pth')
                 np.savetxt('rewards_per_episode.csv', episode_rewards, delimiter = ',', fmt='%1.3f')
-
+                
 
 
 
