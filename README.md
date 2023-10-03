@@ -31,5 +31,5 @@ python train_and_test_dqn_sb3.py --stacking False
 
 To test DQN implementation 
 ```
-python train_dqn.py
+python train_dqn.py --render True
 ```
