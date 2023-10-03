@@ -14,12 +14,15 @@ def main():
     parser = argparse.ArgumentParser(description='DQN Train')
 
     parser.add_argument('--stacking', type = str, default = "True", help = 'Whether or not to use frame stacking - True or False')
+    parser.add_argument('--render', type = str, default = "False", help = 'Whether to render or not - True or False')
 
     args = parser.parse_args()
 
-    if args.stacking == "True":
+    render_mode = 'human' if args.render.lower() == 'true' else None
+
+    if args.stacking.lower() == "true":
         # Wrap in SB3 Monitor first to see rewards in DummyVecEnv
-        env = Monitor(gym.make("gym_examples/PhilEnv-v1", render_mode="human"))
+        env = Monitor(gym.make("gym_examples/PhilEnv-v1", render_mode = render_mode))
         env = DummyVecEnv([lambda: env])
         # Frame-stacking with 4 frames using SB3 wrapper
         env = VecFrameStack(env, 4)
@@ -35,7 +38,7 @@ def main():
                     exploration_fraction = 0.5) # buffer size is 10x smaller than default because my mac doesn't have enough memory
 
     else:
-        env = gym.make("gym_examples/PhilEnv-v1", render_mode="human")
+        env = gym.make("gym_examples/PhilEnv-v1", render_mode=render_mode)
 
         # Instantiate the agent
         model = DQN("CnnPolicy", 
@@ -50,50 +53,6 @@ def main():
     model.learn(total_timesteps=int(60000), progress_bar=True)
     # Save the agent
     model.save("DQN_test")
-
-
-# #env = gym.make("gym_examples/PhilEnv-v1", render_mode="human")
-
-# env = DummyVecEnv([lambda: gym.make("gym_examples/PhilEnv-v1", render_mode="human")])
-# # Frame-stacking with 4 frames using SB3 wrapper
-# env = VecFrameStack(env, 4)
-# env = Monitor(env, './dqn_tensorboard_log/')
-
-
-# # Instantiate the agent
-# model = DQN("CnnPolicy", 
-#             env, 
-#        #buffer for non-stacking     buffer_size = 80000, 
-#             buffer_size = 20000,
-#         #    learning_starts = 4000, 
-#             learning_starts = 1000,
-#             verbose=1, 
-#             tensorboard_log = './dqn_tensorboard_log/',
-#             exploration_fraction = 0.5) # buffer size is 10x smaller than default because my mac doesn't have enough memory
-
-# # Train the agent and display a progress bar
-# model.learn(total_timesteps=int(60000), progress_bar=True)
-# # Save the agent
-# model.save("DQN_test")
-
-# # del model  # delete trained model to demonstrate loading
-
-# # model = DQN.load("DQN_test", env=env)
-
-# # #mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
-
-# # # Enjoy trained agent
-# # vec_env = model.get_env()
-# # obs = vec_env.reset()
-# # for i in range(1000):
-# #     action, _states = model.predict(obs, deterministic=True)
-# #     print(f'Action: {action}')
-# #     obs, rewards, dones, info = vec_env.step(action) # sb3 does not support terminated and truncated
-# #     print(f'Observation is {obs} \n'
-# #           f'Reward is {rewards} \n'
-# #           f'Done is {dones} \n'
-# #           f'Distance is {info}')
-# #     vec_env.render("human") 
 
 if __name__ == "__main__":
     main()

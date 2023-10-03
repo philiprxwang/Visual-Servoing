@@ -21,6 +21,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description = 'DQN PhilEnv')
     parser.add_argument('--load-checkpoint-file', type = str, default = None, help = 'Where checkpoint file should be loaded from')
+    parser.add_argument('--render', type = str, default = "False", help = 'Whether to render or not - True or False')
 
     args = parser.parse_args()
 
@@ -50,7 +51,7 @@ if __name__ == '__main__':
 
     writer = SummaryWriter("DQN_PhilEnv")
 
-    env = gym.make('gym_examples/PhilEnv-v1')
+    env = gym.make('gym_examples/PhilEnv-v1', render_mode = 'human' if args.render.lower() == 'true' else None)
  #   env.seed(hyper_params['seed'])
     env = FrameStack(env, 4)
 

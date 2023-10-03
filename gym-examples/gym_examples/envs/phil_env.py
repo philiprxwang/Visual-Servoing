@@ -38,8 +38,11 @@ class PhilEnv(gym.Env):
         self.dir_size = DIR_SIZE
         self.img_mask_thresh = IMG_MASK_THRESH
 
-        #p.connect(p.GUI)
-        p.connect(p.DIRECT) 
+        if render_mode == 'human':
+            p.connect(p.GUI)
+        else:
+            p.connect(p.DIRECT) # default connection method
+
         self.action_space = spaces.Discrete(6) # total 6 actions: front, back, left, right, up, down
         self.observation_space = spaces.Box(low=0, high = 255, shape = (self.num_channels, 84, 84), dtype = np.uint8) # observation, 160x210 RGB array, undergoes: grayscale, mask and resize to 84x84. Activate this line for SB3
         #self.observation_space = spaces.Box(low=0, high = 255, shape = (84, 84, 1), dtype = np.uint8)
